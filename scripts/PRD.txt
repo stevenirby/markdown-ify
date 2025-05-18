@@ -1,0 +1,177 @@
+# Overview
+Markdown-ify is a browser bookmarklet that transforms any complex webpage into clean, readable markdown format with a single click. It provides a user-friendly way to extract and repurpose valuable content from websites, offering immediate access to a stripped-down, convertible version of web content that's ready for note-taking, content management systems, or documentation.
+
+# Core Features
+## Content Extraction and Conversion
+- Utilizes Mozilla's Readability library to extract the main content from any webpage, filtering out ads, sidebars, and other distractions
+- Converts the extracted HTML to clean, properly formatted markdown using Turndown
+- Preserves important elements like headers, links, lists, and tables in the markdown output
+
+## User Interface
+- Displays a non-intrusive, attractive overlay with the converted markdown content
+- Provides a prominent "Copy" button that copies all markdown to the user's clipboard
+- Features a clean, modern design that doesn't interfere with the underlying webpage
+
+## Image Management
+- Shows a carousel of thumbnails representing all images found on the page
+- Allows users to interact with individual images via options to:
+  - Download a specific image
+  - Copy image URL to clipboard
+- Includes a "Download All Images" option for batch processing
+
+## Tracking and Feedback
+- Includes branding with "Built by AgentsCode.dev" link
+- Provides a feedback button for users to report issues or suggest improvements
+- Implements error tracking to capture and report any issues that occur
+- Integrates Plausible analytics for privacy-friendly usage tracking
+
+# User Experience
+## User Personas
+1. **Content Researchers** - Professionals who need to extract and save content from multiple sources
+2. **Writers and Bloggers** - People who reference web content and need clean, formatted text for their work
+3. **Students** - Individuals collecting research materials and notes from online sources
+4. **Developers** - Technical users who prefer markdown for documentation or note-taking
+
+## Key User Flows
+1. User navigates to a webpage with content they want to extract
+2. User clicks the Markdown-ify bookmarklet in their browser
+3. The bookmarklet processes the page and displays an overlay with the converted markdown
+4. User reviews the content and can:
+   - Copy all markdown with one click
+   - Browse images in the carousel
+   - Download individual images or all images
+   - Provide feedback if needed
+5. User closes the overlay when finished
+
+## UI/UX Considerations
+- Overlay should be dismissible with an "X" button or by clicking outside the overlay
+- Interface should be responsive and work across different screen sizes
+- UI elements should be accessible and follow WCAG guidelines where possible
+- Color scheme should be neutral and professional to work with any website
+
+# Technical Architecture
+## System Components
+1. **Bookmarklet Launcher** - JavaScript code that initializes the tool when clicked
+2. **Content Extractor** - Utilizes @mozilla/readability to parse and extract main content
+3. **Markdown Converter** - Uses Turndown to transform HTML to markdown
+4. **UI Overlay** - Creates and manages the interface displayed to users
+5. **Image Manager** - Handles the image carousel and image-related operations
+6. **Analytics and Tracking** - Manages error reporting and usage analytics
+
+## Data Flow
+1. Bookmarklet captures the current page DOM
+2. Readability processes the DOM to extract the main content
+3. Turndown converts the extracted content to markdown
+4. UI components render the markdown and image carousel
+5. User interactions (copy, download) are processed locally in the browser
+6. Analytics and error data are sent to respective endpoints
+
+## Dependencies
+- @mozilla/readability for content extraction
+- Turndown for HTML to markdown conversion
+- TypeScript for type-safe code development
+- Plausible for analytics
+- Custom error tracking endpoint
+
+## Browser Compatibility
+- Must work on modern browsers: Chrome, Firefox, Safari, Edge
+- Mobile browser support not required for v1 but should be considered for future versions
+
+# Development Roadmap
+## MVP Requirements
+1. **Core Functionality**
+   - Implement bookmarklet initialization
+   - Integrate Readability for content extraction
+   - Implement Turndown for markdown conversion
+   - Create basic UI overlay with markdown display
+   - Add copy-to-clipboard functionality
+
+2. **Image Management**
+   - Implement image extraction from page
+   - Create image carousel with thumbnails
+   - Add single image download capability
+   - Add image URL copy functionality
+   - Implement download all images feature
+
+3. **Branding and Analytics**
+   - Add "Built by AgentsCode.dev" branding with link
+   - Implement basic error tracking
+   - Set up Plausible analytics integration
+   - Add feedback button with link to feedback form
+
+## Future Enhancements
+1. **Advanced Customization**
+   - Allow users to customize markdown output format
+   - Add options for including/excluding certain elements
+   - Support for custom CSS in the overlay
+
+2. **Content Management**
+   - Save extracted content to cloud services (Google Drive, Dropbox)
+   - Email markdown content directly from the overlay
+   - Create bookmarking system for saved extractions
+
+3. **Multi-platform Support**
+   - Browser extension version with additional capabilities
+   - Mobile browser support
+   - Integration with note-taking apps
+
+# Logical Dependency Chain
+1. **Foundation (First)**
+   - Set up TypeScript project structure
+   - Create bookmarklet initialization code
+   - Implement content extraction with Readability
+   - Implement HTML to markdown conversion with Turndown
+
+2. **User Interface (Second)**
+   - Design and implement overlay container
+   - Create markdown display area with syntax highlighting
+   - Add copy button functionality
+   - Implement overlay dismissal
+
+3. **Image Handling (Third)**
+   - Implement image extraction logic
+   - Create image carousel component
+   - Add image interaction buttons
+   - Implement download functionality
+
+4. **Tracking and Analytics (Fourth)**
+   - Implement error reporting
+   - Add Plausible analytics
+   - Create feedback button
+   - Add branding and attribution
+
+5. **Final Integration (Last)**
+   - Combine all components
+   - Optimize performance
+   - Test across browsers
+   - Package as bookmarklet
+
+# Risks and Mitigations
+## Technical Challenges
+- **Risk**: Content extraction may fail on some complex or poorly structured websites
+  - **Mitigation**: Implement fallback methods and clear error messages for users
+
+- **Risk**: Size limitations of bookmarklet code
+  - **Mitigation**: Optimize code size and potentially load larger dependencies on demand
+
+- **Risk**: Cross-origin restrictions might limit functionality
+  - **Mitigation**: Design around browser security limitations and provide documentation on limitations
+
+## MVP Scope
+- **Risk**: Feature creep extending development time
+  - **Mitigation**: Strictly prioritize core functionality for initial release
+
+- **Risk**: Performance issues with large pages or many images
+  - **Mitigation**: Implement lazy loading and progressive processing where appropriate
+
+# Appendix
+## Similar Tools and Inspiration
+- Browser Reader modes
+- Web clipper extensions
+- Markdown conversion tools
+
+## Technical Considerations
+- Bookmarklet size must be minimal, with potential for loading external resources
+- All processing should happen client-side for privacy and performance
+- Error tracking should be anonymous and respect user privacy
+- Analytics should be minimal and privacy-focused (reason for choosing Plausible)
