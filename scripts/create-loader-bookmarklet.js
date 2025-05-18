@@ -35,127 +35,21 @@ function createLoaderBookmarklet() {
     mkdirSync(DIST_DIR, { recursive: true });
   }
 
-  // Create the minimal loader code
-  // This fetches and executes the latest version
-  const loaderCode = `
-javascript:(function(){
-  // Show loading notification
-  var loader = document.createElement('div');
-  loader.style.position = 'fixed';
-  loader.style.top = '20px';
-  loader.style.right = '20px';
-  loader.style.backgroundColor = '#fff';
-  loader.style.padding = '10px';
-  loader.style.borderRadius = '4px';
-  loader.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-  loader.style.zIndex = '9999999999';
-  loader.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-  loader.textContent = 'Loading Markdown-ify...';
-  document.body.appendChild(loader);
+  // Create the bookmarklet code (compact, minified)
+  const bookmarkletCode = `javascript:(function(){
+    const script=document.createElement('script');
+    script.src='${IMPLEMENTATION_URL}?t='+Date.now();
+    document.body.appendChild(script);
+  })();`;
 
-  // Function to load and execute the script with timeout
-  function loadScript(url, callback) {
-    var timeoutId;
-    var hasCompleted = false;
+  // Write the bookmarklet to a file
+  writeFileSync(LOADER_PATH, bookmarkletCode);
+  console.log(`📝 Generated loader bookmarklet: ${LOADER_PATH}`);
 
-    // Create script element
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.async = true;
-
-    // Add timestamp parameter to bypass cache
-    var timestamp = new Date().getTime();
-    var cacheBypassUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + timestamp;
-
-    script.src = cacheBypassUrl;
-
-    // Set up timeout for script loading
-    timeoutId = setTimeout(function() {
-      if (!hasCompleted) {
-        hasCompleted = true;
-        handleError('Loading timed out after 10 seconds. Server may be unavailable.');
-      }
-    }, 10000);
-
-    script.onload = function() {
-      if (!hasCompleted) {
-        hasCompleted = true;
-        clearTimeout(timeoutId);
-        if (callback) callback();
-      }
-    };
-
-    script.onerror = function() {
-      if (!hasCompleted) {
-        hasCompleted = true;
-        clearTimeout(timeoutId);
-        handleError('Failed to load script. Server may be unavailable.');
-      }
-    };
-
-    document.head.appendChild(script);
-  }
-
-  // Error handler
-  function handleError(message) {
-    console.error('Markdown-ify error:', message);
-    loader.textContent = 'Error: ' + message;
-    loader.style.backgroundColor = '#ffebee';
-    loader.style.color = '#c62828';
-
-    // Add a close button
-    var closeButton = document.createElement('button');
-    closeButton.textContent = '×';
-    closeButton.style.marginLeft = '8px';
-    closeButton.style.background = 'none';
-    closeButton.style.border = 'none';
-    closeButton.style.cursor = 'pointer';
-    closeButton.style.fontSize = '16px';
-    closeButton.style.fontWeight = 'bold';
-    closeButton.onclick = function() {
-      if (document.body.contains(loader)) {
-        document.body.removeChild(loader);
-      }
-    };
-    loader.appendChild(closeButton);
-
-    // Auto remove after 8 seconds
-    setTimeout(function() {
-      if (document.body.contains(loader)) {
-        document.body.removeChild(loader);
-      }
-    }, 8000);
-
-    // Attempt to run the fallback version if available
-    tryFallbackVersion();
-  }
-
-  // Try to load a fallback version that's embedded
-  function tryFallbackVersion() {
-    if (window.markdownify && typeof window.markdownify.init === 'function') {
-      console.log('Using already loaded version of Markdown-ify');
-      window.markdownify.init();
-    } else {
-      console.error('No fallback version of Markdown-ify available');
-    }
-  }
-
-  // Load the full implementation
-  loadScript('${IMPLEMENTATION_URL}', function() {
-    // Remove loader when script is loaded
-    if (document.body.contains(loader)) {
-      document.body.removeChild(loader);
-    }
-  });
-})();
-`.trim();
-
-  // Write loader to file
-  writeFileSync(LOADER_PATH, loaderCode);
-  console.log(`📝 Loader bookmarklet created: ${LOADER_PATH}`);
-
-  // Generate install HTML
-  generateInstallHTML(loaderCode);
+  // Generate and write the HTML installation file
+  const htmlContent = generateInstallHTML(bookmarkletCode);
+  writeFileSync(INSTALL_LOADER_PATH, htmlContent);
+  console.log(`📝 Generated loader installation HTML: ${INSTALL_LOADER_PATH}`);
 
   console.log('✅ Loader bookmarklet creation complete!');
 }
@@ -166,8 +60,18 @@ javascript:(function(){
  * @param {string} bookmarkletCode The bookmarklet code
  */
 function generateInstallHTML(bookmarkletCode) {
-  // Properly encode the bookmarklet for HTML attribute
-  const encodedBookmarklet = bookmarkletCode.replace(/"/g, '&quot;');
+  // Ensure bookmarklet code has javascript: prefix
+  const formattedBookmarklet = bookmarkletCode.startsWith('javascript:')
+    ? bookmarkletCode
+    : `javascript:${bookmarkletCode}`;
+
+  // Properly encode special characters for HTML attribute
+  const encodedBookmarklet = formattedBookmarklet
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -192,93 +96,67 @@ function generateInstallHTML(bookmarkletCode) {
       padding: 8px 16px;
       background-color: #0366d6;
       color: white;
-      text-decoration: none;
       border-radius: 4px;
+      text-decoration: none;
       font-weight: 500;
-      margin: 20px 0;
+      margin: 8px 0;
     }
     .bookmarklet:hover {
       background-color: #0256bf;
     }
-    .instructions {
-      background-color: #f6f8fa;
-      border: 1px solid #e1e4e8;
-      border-radius: 6px;
-      padding: 16px;
-      margin: 20px 0;
-    }
-    .warning {
-      background-color: #fff8c5;
-      border-left: 4px solid #f1c40f;
-      padding: 12px 16px;
-      margin: 20px 0;
+    ol li {
+      margin-bottom: 10px;
     }
     .note {
-      background-color: #e7f5ff;
-      border-left: 4px solid #4dabf7;
-      padding: 12px 16px;
-      margin: 20px 0;
-    }
-    code {
-      background-color: #f1f1f1;
-      padding: 2px 4px;
-      border-radius: 3px;
-      font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      background-color: #f8f9fa;
+      border-left: 4px solid #17a2b8;
+      padding: 15px;
+      margin-bottom: 20px;
     }
     footer {
-      margin-top: 40px;
+      margin-top: 50px;
       padding-top: 20px;
       border-top: 1px solid #eee;
+      text-align: center;
       font-size: 14px;
       color: #666;
+    }
+    footer a {
+      color: #0366d6;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <h1>Markdown-ify Loader Bookmarklet</h1>
-  <p>This bookmarklet always loads the latest version of Markdown-ify from:</p>
-  <code>${IMPLEMENTATION_URL}</code>
+  <h1>Markdown-ify Loader Installation</h1>
 
-  <div class="instructions">
-    <h2>Installation Instructions</h2>
-    <ol>
-      <li>Drag the button below to your browser's bookmarks bar:
-        <a class="bookmarklet" href="${encodedBookmarklet}" title="Markdown-ify">
-          Markdown-ify
-        </a>
-      </li>
-      <li>Navigate to any web page you want to convert</li>
-      <li>Click the bookmark to convert the page to markdown</li>
-    </ol>
-
-    <div class="warning">
-      <strong>Note:</strong> This version will always fetch the latest code. If your network is offline or the server is down, it won't work.
-    </div>
-
-    <div class="note">
-      <strong>Troubleshooting:</strong> If you see errors about analytics or other services being blocked, this is normal if you're using an ad blocker.
-      The bookmarklet will still function correctly despite these errors.
-    </div>
+  <div class="note">
+    <p>This is the loader version of Markdown-ify that fetches the latest code each time you use it.
+    This ensures you always have the latest version without reinstalling.</p>
   </div>
 
-  <h2>Features</h2>
+  <h2>Installation Instructions</h2>
+  <ol>
+    <li>Drag the button below to your bookmarks bar: <a class="bookmarklet" href="${encodedBookmarklet}">Markdown-ify Loader</a></li>
+    <li>Navigate to any web page</li>
+    <li>Click the bookmark to convert the page to markdown</li>
+  </ol>
+
+  <h2>Loader Advantages</h2>
   <ul>
-    <li>Always loads the latest version of the code</li>
-    <li>No need to reinstall when updates are made to the implementation</li>
-    <li>Uses Mozilla's Readability to extract the main content from any web page</li>
-    <li>Converts HTML to well-formatted markdown using Turndown</li>
-    <li>Preserves tables, code blocks, lists, and other complex structures</li>
-    <li>Includes images in a carousel with download and copy options</li>
+    <li>Always uses the latest version</li>
+    <li>Smaller bookmark size</li>
+    <li>Automatic updates and fixes</li>
+    <li>No need to reinstall when the tool is updated</li>
   </ul>
 
   <footer>
-    <p>Version: ${packageJson.version} | &copy; ${new Date().getFullYear()} <a href="https://agentscode.dev" target="_blank">AgentsCode.dev</a></p>
+    Created by <a href="https://agentscode.dev" target="_blank">AgentsCode.dev</a> | Version: ${packageJson.version}
   </footer>
 </body>
 </html>`;
 
-  writeFileSync(INSTALL_LOADER_PATH, htmlContent);
-  console.log(`📝 Generated loader installation HTML: ${INSTALL_LOADER_PATH}`);
+  return htmlContent;
 }
 
 // Execute the script
